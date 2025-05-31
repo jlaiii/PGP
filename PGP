@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🔐 PGP Key Generator & Friend Manager</title>
+<script src="https://unpkg.com/openpgp@5.5.0/dist/openpgp.min.js"></script>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #f0f4f8;
+    color: #333;
+  }
+  h1, h2 {
+    color: #222;
+  }
+  input, textarea, button, select {
+    width: 100%;
+    margin: 8px 0;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+    box-sizing: border-box;
+  }
+  button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  button:disabled {
+    background-color: #999;
+    cursor: not-allowed;
+  }
+  button:hover:not(:disabled) {
+    background-color: #0056b3;
+  }
+  pre {
+    background: #e9ecef;
+    padding: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .friend-entry {
+    margin-bottom: 12px;
+    background: white;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+  .friend-key {
+    display: none;
+    margin-top: 8px;
+  }
+  .copy-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #28a745;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .copy-toast.show {
+    opacity: 1;
+  }
+  #decryptedMessage, #encryptedOutput {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 10px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  label {
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<h1>🔐 PGP Key Generator & Friend Manager</h1>
+
+<section>
+  <h2>🛠️ Generate Your PGP Key</h2>
+  <input type="text" id="name" placeholder="Your Name (optional)" />
+  <input type="email" id="email" placeholder="Your Email (optional)" />
+  <input type="password" id="passphrase" placeholder="Passphrase (optional but recommended)" />
+  <button id="generateKeyBtn">🔑 Generate Key</button>
+</section>
+
+<section>
+  <h2>📬 Your Public Key</h2>
+  <button id="togglePublicKeyBtn" disabled>Show Public Key</button>
+  <pre id="publicKey" style="display:none;">No key generated yet.</pre>
+  <button id="copyPublicKeyBtn" disabled>📋 Copy Public Key</button>
+</section>
+
+<section>
+  <h2>👫 Add a Friend</h2>
+  <input type="text" id="friendName" placeholder="Friend's Name" />
+  <textarea id="friendPubKey" placeholder="Paste friend's public key here..." rows="4"></textarea>
+  <button id="addFriendBtn" disabled>➕ Add Friend</button>
+</section>
+
+<section>
+  <h2>📒 Friends List</h2>
+  <div id="friendsList">No friends added yet.</div>
+</section>
+
+<section>
+  <h2>✉️ Encrypt Message</h2>
+  <label for="encryptFriendSelect">Encrypt to Friend (leave blank to encrypt to your own public key):</label>
+  <select id="encryptFriendSelect">
+    <option value="">-- No Friend Selected --</option>
+  </select>
+  <textarea id="messageToEncrypt" placeholder="Write your message here..." rows="5"></textarea>
+  <button id="encryptBtn" disabled>🔐 Encrypt</button>
+  <pre id="encryptedOutput" style="display:none;"></pre>
+  <button id="copyEncryptedBtn" style="display:none;">📋 Copy Encrypted Message</button>
+</section>
+
+<section>
+  <h2>🕵️‍♂️ Decrypt Message</h2>
+  <textarea id="encryptedMessage" placeholder="Paste PGP encrypted message here..." rows="6"></textarea>
+  <input type="password" id="decryptPassphrase" placeholder="Passphrase (optional)" />
+  <button id="decryptBtn">🔓 Decrypt</button>
+  <pre id="decryptedMessage" style="display:none;"></pre>
+</section>
+
+<section>
+  <h2>💾 Save Your Profile</h2>
+  <button id="saveProfileBtn" disabled>📥 Download Profile (.json)</button>
+</section>
+
+<section>
+  <h2>📂 Load Existing Profile</h2>
+  <input type="file" id="profileLoader" accept=".json" />
+</section>
+
+<div id="copyToast" class="copy-toast">Copied to clipboard ✅</div>
+
+<script>
+  let profile = {
+    name: '',
+    email: '',
+    publicKey: '',
+    privateKey: '',
+    friends: []
+  };
+
+  const nameInput = document.getElementById('name');
+  const emailInput = document.getElementById('email');
+  const passphraseInput = document.getElementById('passphrase');
+  const generateKeyBtn = document.getElementById('generateKeyBtn');
+  const publicKeyPre = document.getElementById('publicKey');
+  const copyPublicKeyBtn = document.getElementById('copyPublicKeyBtn');
+  const saveProfileBtn = document.getElementById('saveProfileBtn');
+  const addFriendBtn = document.getElementById('addFriendBtn');
+  const friendsListDiv = document.getElementById('friendsList');
+  const copyToast = document.getElementById('copyToast');
+  const friendNameInput = document.getElementById('friendName');
+  const friendPubKeyInput = document.getElementById('friendPubKey');
+  const profileLoader = document.getElementById('profileLoader');
+  const decryptBtn = document.getElementById('decryptBtn');
+  const encryptedMessageInput = document.getElementById('encryptedMessage');
+  const decryptPassphraseInput = document.getElementById('decryptPassphrase');
+  const decryptedMessagePre = document.getElementById('decryptedMessage');
+  const togglePublicKeyBtn = document.getElementById('togglePublicKeyBtn');
+
+  const encryptFriendSelect = document.getElementById('encryptFriendSelect');
+  const messageToEncryptInput = document.getElementById('messageToEncrypt');
+  const encryptBtn = document.getElementById('encryptBtn');
+  const encryptedOutputPre = document.getElementById('encryptedOutput');
+  const copyEncryptedBtn = document.getElementById('copyEncryptedBtn');
+
+  // Toggle showing/hiding own public key
+  togglePublicKeyBtn.addEventListener('click', () => {
+    if (publicKeyPre.style.display === 'none') {
+      publicKeyPre.style.display = 'block';
+      togglePublicKeyBtn.textContent = 'Hide Public Key';
+    } else {
+      publicKeyPre.style.display = 'none';
+      togglePublicKeyBtn.textContent = 'Show Public Key';
+    }
+  });
+
+  function disableKeyGenInputs() {
+    nameInput.disabled = true;
+    emailInput.disabled = true;
+    passphraseInput.disabled = true;
+    generateKeyBtn.disabled = true;
+    togglePublicKeyBtn.disabled = false;
+  }
+
+  // Show toast message (custom text)
+  function showToast(text) {
+    copyToast.textContent = text;
+    copyToast.classList.add('show');
+    setTimeout(() => copyToast.classList.remove('show'), 2000);
+  }
+
+  // Generate PGP keypair
+  generateKeyBtn.addEventListener('click', async () => {
+    let name = nameInput.value.trim();
+    let email = emailInput.value.trim();
+
+    if (!name && !email) {
+      name = "Anonymous";
+      email = "anonymous@example.com";
+    }
+
+    const passphrase = passphraseInput.value;
+
+    try {
+      publicKeyPre.textContent = '⏳ Generating keys, please wait...';
+      copyPublicKeyBtn.disabled = true;
+      saveProfileBtn.disabled = true;
+      addFriendBtn.disabled = true;
+      encryptBtn.disabled = true;
+      togglePublicKeyBtn.disabled = true;
+
+      const key = await openpgp.generateKey({
+        type: 'rsa',
+        rsaBits: 2048,
+        userIDs: [{ name, email }],
+        passphrase: passphrase || undefined,
+      });
+
+      profile.name = name;
+      profile.email = email;
+      profile.publicKey = key.publicKey;
+      profile.privateKey = key.privateKey;
+      profile.friends = [];
+
+      publicKeyPre.textContent = key.publicKey;
+      copyPublicKeyBtn.disabled = false;
+      saveProfileBtn.disabled = false;
+      addFriendBtn.disabled = false;
+      encryptBtn.disabled = false;
+      togglePublicKeyBtn.disabled = false;
+
+      disableKeyGenInputs();
+
+      showToast('🔑 Key generated!');
+    } catch (e) {
+      publicKeyPre.textContent = 'Error generating keys. Try again.';
+      alert('Error generating keys: ' + e.message);
+      copyPublicKeyBtn.disabled = true;
+      saveProfileBtn.disabled = true;
+      addFriendBtn.disabled = true;
+      encryptBtn.disabled = true;
+      togglePublicKeyBtn.disabled = true;
+    }
+  });
+
+  // Copy to clipboard helper
+  function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('📋 Copied to clipboard ✅');
+    }).catch(() => {
+      alert('Failed to copy to clipboard');
+    });
+  }
+
+  // Copy your public key
+  copyPublicKeyBtn.addEventListener('click', () => {
+    copyText(profile.publicKey);
+  });
+
+  // Add friend enable/disable logic
+  function checkAddFriendBtn() {
+    addFriendBtn.disabled = !(
+      friendNameInput.value.trim() && friendPubKeyInput.value.trim()
+    );
+  }
+  friendNameInput.addEventListener('input', checkAddFriendBtn);
+  friendPubKeyInput.addEventListener('input', checkAddFriendBtn);
+
+  // Add friend button
+  addFriendBtn.addEventListener('click', () => {
+    const fname = friendNameInput.value.trim();
+    const fkey = friendPubKeyInput.value.trim();
+    if (!fname || !fkey) return;
+
+    // Prevent duplicates (by name)
+    if (profile.friends.some(f => f.name === fname)) {
+      alert('Friend with this name already exists.');
+      return;
+    }
+
+    profile.friends.push({
+      name: fname,
+      publicKey: fkey,
+      showKey: false
+    });
+
+    friendNameInput.value = '';
+    friendPubKeyInput.value = '';
+    addFriendBtn.disabled = true;
+
+    updateFriendsDisplay();
+    updateEncryptFriendSelect();
+    showToast(`👫 Friend "${fname}" added!`);
+  });
+
+  // Update friends display
+  function updateFriendsDisplay() {
+    friendsListDiv.innerHTML = '';
+    if (profile.friends.length === 0) {
+      friendsListDiv.textContent = 'No friends added yet.';
+      return;
+    }
+    profile.friends.forEach((friend, idx) => {
+      const div = document.createElement('div');
+      div.className = 'friend-entry';
+      div.innerHTML = `
+        <strong>${friend.name}</strong>
+        <button data-idx="${idx}" class="toggleKeyBtn" style="margin-left:10px;">
+          ${friend.showKey ? '👁️ Hide Key' : '👁️ Show Key'}
+        </button>
+        <button data-idx="${idx}" class="copyFriendKeyBtn" style="margin-left:10px;">
+          📋 Copy Key
+        </button>
+        <pre class="friend-key" style="display:${friend.showKey ? 'block' : 'none'};">${friend.publicKey}</pre>
+      `;
+      friendsListDiv.appendChild(div);
+    });
+
+    document.querySelectorAll('.toggleKeyBtn').forEach(btn => {
+      btn.onclick = e => {
+        const i = Number(e.target.getAttribute('data-idx'));
+        profile.friends[i].showKey = !profile.friends[i].showKey;
+        updateFriendsDisplay();
+      };
+    });
+
+    document.querySelectorAll('.copyFriendKeyBtn').forEach(btn => {
+      btn.onclick = e => {
+        const i = Number(e.target.getAttribute('data-idx'));
+        copyText(profile.friends[i].publicKey);
+      };
+    });
+  }
+
+  // Update friend select dropdown for encrypt
+  function updateEncryptFriendSelect() {
+    encryptFriendSelect.innerHTML = '<option value="">-- No Friend Selected --</option>';
+    profile.friends.forEach((friend, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx;
+      opt.textContent = friend.name;
+      encryptFriendSelect.appendChild(opt);
+    });
+  }
+
+  // Encrypt message
+  encryptBtn.addEventListener('click', async () => {
+    const msg = messageToEncryptInput.value.trim();
+    if (!msg) {
+      alert('Please enter a message to encrypt.');
+      return;
+    }
+    if (!profile.publicKey) {
+      alert('Generate or load your keys first.');
+      return;
+    }
+
+    try {
+      let publicKeysArmored = '';
+      if (encryptFriendSelect.value === '') {
+        // Encrypt to own public key
+        publicKeysArmored = profile.publicKey;
+      } else {
+        // Encrypt to selected friend's public key
+        const friend = profile.friends[Number(encryptFriendSelect.value)];
+        if (!friend) {
+          alert('Selected friend not found.');
+          return;
+        }
+        publicKeysArmored = friend.publicKey;
+      }
+
+      const publicKey = await openpgp.readKey({ armoredKey: publicKeysArmored });
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: msg }),
+        encryptionKeys: publicKey
+      });
+
+      encryptedOutputPre.textContent = encrypted;
+      encryptedOutputPre.style.display = 'block';
+      copyEncryptedBtn.style.display = 'inline-block';
+      showToast('🔐 Message encrypted!');
+    } catch (e) {
+      alert('Error encrypting message: ' + e.message);
+    }
+  });
+
+  // Copy encrypted message button
+  copyEncryptedBtn.addEventListener('click', () => {
+    copyText(encryptedOutputPre.textContent);
+  });
+
+  // Decrypt message
+  decryptBtn.addEventListener('click', async () => {
+    const encrypted = encryptedMessageInput.value.trim();
+    const passphrase = decryptPassphraseInput.value;
+
+    if (!encrypted) {
+      alert('Please paste the encrypted message.');
+      return;
+    }
+
+    if (!profile.privateKey) {
+      alert('No private key loaded. Generate or load your profile first.');
+      return;
+    }
+
+    decryptedMessagePre.style.display = 'none';
+    decryptedMessagePre.textContent = '';
+
+    try {
+      const privKey = await openpgp.readPrivateKey({ armoredKey: profile.privateKey });
+      let decryptedPrivKey = privKey;
+
+      if (passphrase) {
+        decryptedPrivKey = await openpgp.decryptKey({
+          privateKey: privKey,
+          passphrase
+        });
+      }
+
+      const message = await openpgp.readMessage({ armoredMessage: encrypted });
+
+      const { data: decrypted } = await openpgp.decrypt({
+        message,
+        decryptionKeys: decryptedPrivKey
+      });
+
+      decryptedMessagePre.textContent = decrypted;
+      decryptedMessagePre.style.display = 'block';
+
+      showToast('🔓 Message decrypted!');
+    } catch (e) {
+      alert('Error decrypting message: ' + e.message);
+    }
+  });
+
+  // Save profile button
+  saveProfileBtn.addEventListener('click', () => {
+    const dataStr = JSON.stringify(profile, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pgp-profile.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('💾 Profile saved!');
+  });
+
+  // Load profile input
+  profileLoader.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const loaded = JSON.parse(reader.result);
+        if (!loaded.publicKey || !loaded.privateKey) {
+          alert('Invalid profile JSON.');
+          return;
+        }
+        profile = loaded;
+
+        // Update UI from loaded profile
+        nameInput.value = profile.name || '';
+        emailInput.value = profile.email || '';
+        passphraseInput.value = '';
+
+        publicKeyPre.textContent = profile.publicKey;
+        copyPublicKeyBtn.disabled = false;
+        saveProfileBtn.disabled = false;
+        addFriendBtn.disabled = false;
+        encryptBtn.disabled = false;
+        togglePublicKeyBtn.disabled = false;
+
+        disableKeyGenInputs();
+
+        updateFriendsDisplay();
+        updateEncryptFriendSelect();
+
+        showToast('📂 Profile loaded!');
+      } catch {
+        alert('Failed to load profile.');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+</script>
+
+</body>
+</html>
