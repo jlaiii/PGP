@@ -1,6 +1,6 @@
 # 🔐 PGP Key Generator & Friend Manager
 
-[Live](https://jlaiii.github.io/PGP/)
+[Live Demo](https://jlaiii.github.io/PGP/)
 
 A simple and intuitive web-based tool to generate PGP key pairs, manage friends' public keys, encrypt messages, and decrypt received messages — all right in your browser with no backend required.
 
@@ -69,8 +69,23 @@ A simple and intuitive web-based tool to generate PGP key pairs, manage friends'
 
 ---
 
+## Crypto Donations
+
+If you find this tool useful and want to support development, you can send donations to the following addresses:
+
+- **Bitcoin (BTC):** `bc1quk2r3sukuv4pjumjqpj2hjl6lnvkcq6ws7uanl`
+- **Litecoin (LTC):** `ltc1qx3lgmqal9ye579ln4z3v9vza27wr6xglv94u4t`
+- **Ethereum (ETH):** `0x037a45482e5d0a988AA5ff5F6804DCe3276488D6`
+- **Solana (SOL):** `8PzeFDjKUQf9UDY4ezNdG9927wxKmeETTTyvv2GtuK1a`
+- **Monero (XMR):** `85QzVMEGFvogZzGUqmB6aQTcLucKKPCSCiP6rAeNN7nMbM9u5EVgGKPXocrxp6FzwKdVGooPHJaKjMyFsA3ma6zJ1yifbPb`
+
+---
+
 ## Feedback & Contributions
 
 Feel free to open issues or pull requests on the [GitHub repository](https://github.com/jlaiii/PGP) to improve this project.
+
+
+---
 
 **Try it out now:** [https://jlaiii.github.io/PGP/](https://jlaiii.github.io/PGP/)
