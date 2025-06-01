@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PGP Decryptor</title>
+  <script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+    textarea {
+      width: 100%;
+      font-size: 1rem;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-family: monospace;
+    }
+    button {
+      background-color: #10b981;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    button:hover {
+      background-color: #059669;
+    }
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #10b981;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
+    }
+    .toggle-btn {
+      cursor: pointer;
+      color: #2563eb;
+      text-decoration: underline;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+      display: inline-block;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Decrypt a Message</h1>
+
+  <div class="toggle-btn" id="toggleKeyBtn" onclick="togglePrivateKey()">Hide Private Key</div>
+  <label for="privateKey">Your Private Key:</label>
+  <textarea id="privateKey" placeholder="Paste your private key here..."></textarea>
+
+  <label for="encrypted">Encrypted Message:</label>
+  <textarea id="encrypted" placeholder="Paste encrypted message here..."></textarea>
+
+  <button onclick="decryptMessage()">Decrypt Message</button>
+
+  <label for="decrypted">Decrypted Message:</label>
+  <textarea id="decrypted" readonly placeholder="Decrypted message will appear here..."></textarea>
+
+  <button onclick="copyDecrypted()">Copy Decrypted Message</button>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    function togglePrivateKey() {
+      const area = document.getElementById('privateKey');
+      const btn = document.getElementById('toggleKeyBtn');
+      area.classList.toggle('hidden');
+      btn.textContent = area.classList.contains('hidden') ? 'Show Private Key' : 'Hide Private Key';
+    }
+
+    // Hide key after paste
+    document.getElementById('privateKey').addEventListener('paste', () => {
+      setTimeout(() => {
+        document.getElementById('privateKey').classList.add('hidden');
+        document.getElementById('toggleKeyBtn').textContent = 'Show Private Key';
+        showToast('Private key saved and hidden');
+      }, 100); // delay so paste completes
+    });
+
+    async function decryptMessage() {
+      const privateKeyArmored = document.getElementById('privateKey').value.trim();
+      const encryptedText = document.getElementById('encrypted').value.trim();
+      const output = document.getElementById('decrypted');
+
+      if (!privateKeyArmored || !encryptedText) {
+        showToast('Private key and encrypted message required.');
+        return;
+      }
+
+      try {
+        const privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored });
+        const message = await openpgp.readMessage({ armoredMessage: encryptedText });
+
+        const { data: decrypted } = await openpgp.decrypt({
+          message,
+          decryptionKeys: privateKey
+        });
+
+        output.value = decrypted;
+        showToast('Message decrypted!');
+      } catch (err) {
+        output.value = '';
+        showToast('Decryption failed.');
+        console.error('Decryption error:', err);
+      }
+    }
+
+    function copyDecrypted() {
+      const output = document.getElementById('decrypted');
+      if (!output.value) {
+        showToast('Nothing to copy.');
+        return;
+      }
+      navigator.clipboard.writeText(output.value).then(() => {
+        showToast('Decrypted message copied!');
+      });
+    }
+  </script>
+</body>
+</html>

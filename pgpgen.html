@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PGP Key Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #f9fafb;
+    color: #111827;
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+  }
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  textarea {
+    width: 100%;
+    height: 140px;
+    font-family: monospace;
+    font-size: 1rem;
+    padding: 10px;
+    margin: 6px 0 12px 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    box-sizing: border-box;
+    resize: vertical;
+  }
+  button {
+    background-color: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    margin: 5px 5px 20px 0;
+    user-select: none;
+  }
+  button:hover:not(:disabled) {
+    background-color: #059669;
+  }
+  button:disabled {
+    background-color: #6ee7b7;
+    cursor: not-allowed;
+  }
+  .toggle-btn {
+    cursor: pointer;
+    color: #2563eb;
+    text-decoration: underline;
+    user-select: none;
+    margin-bottom: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  label {
+    font-weight: 600;
+    display: block;
+    margin-top: 15px;
+  }
+  #message {
+    margin-top: 8px;
+    min-height: 1.3em;
+    font-weight: 600;
+  }
+  .hidden {
+    display: none;
+  }
+  .key-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .key-actions button {
+    flex: 1 1 auto;
+    min-width: 100px;
+  }
+  .checkbox-container {
+    margin-bottom: 12px;
+    user-select: none;
+  }
+  .checkbox-container label {
+    display: inline-block;
+    font-weight: normal;
+    margin-left: 6px;
+    cursor: pointer;
+  }
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #10b981;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 1000;
+  }
+  .toast.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+</style>
+</head>
+<body>
+
+<h1>PGP Key Generator</h1>
+
+<button id="generateBtn">Generate Key Pair</button>
+
+<div class="checkbox-container">
+  <input type="checkbox" id="allowMoreKeys" />
+  <label for="allowMoreKeys">Allow generating more keys (overwrite existing)</label>
+</div>
+
+<label for="publicKeyArea">Public Key:</label>
+<textarea id="publicKeyArea" readonly placeholder="Your public key will appear here..."></textarea>
+<div class="key-actions">
+  <button id="copyPublicKeyBtn" disabled>Copy Public Key</button>
+  <button id="savePublicKeyBtn" disabled>Save Public Key</button>
+</div>
+
+<div class="toggle-btn" id="togglePrivateKeyBtn">Show Private Key</div>
+
+<label for="privateKeyArea" id="privateKeyLabel" class="hidden">Private Key:</label>
+<textarea id="privateKeyArea" class="hidden" readonly placeholder="Your private key will appear here..."></textarea>
+<div class="key-actions hidden" id="privateKeyActions">
+  <button id="copyPrivateKeyBtn">Copy Private Key</button>
+  <button id="savePrivateKeyBtn">Save Private Key</button>
+</div>
+
+<div id="message"></div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  const generateBtn = document.getElementById('generateBtn');
+  const allowMoreKeysCheckbox = document.getElementById('allowMoreKeys');
+  const publicKeyArea = document.getElementById('publicKeyArea');
+  const privateKeyArea = document.getElementById('privateKeyArea');
+  const privateKeyLabel = document.getElementById('privateKeyLabel');
+  const togglePrivateKeyBtn = document.getElementById('togglePrivateKeyBtn');
+  const messageDiv = document.getElementById('message');
+
+  const copyPublicKeyBtn = document.getElementById('copyPublicKeyBtn');
+  const savePublicKeyBtn = document.getElementById('savePublicKeyBtn');
+  const copyPrivateKeyBtn = document.getElementById('copyPrivateKeyBtn');
+  const savePrivateKeyBtn = document.getElementById('savePrivateKeyBtn');
+  const privateKeyActions = document.getElementById('privateKeyActions');
+
+  let keysGenerated = false;
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  generateBtn.addEventListener('click', async () => {
+    if (keysGenerated && !allowMoreKeysCheckbox.checked) {
+      messageDiv.style.color = 'red';
+      messageDiv.textContent = 'Keys already generated. Enable "Allow generating more keys" to overwrite.';
+      return;
+    }
+
+    messageDiv.textContent = '';
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating...';
+
+    try {
+      const { privateKey, publicKey } = await openpgp.generateKey({
+        type: 'rsa',
+        rsaBits: 2048,
+        userIDs: [{ name: 'User', email: 'user@example.com' }],
+        format: 'armored'
+      });
+
+      publicKeyArea.value = publicKey;
+      privateKeyArea.value = privateKey;
+
+      keysGenerated = true;
+
+      copyPublicKeyBtn.disabled = false;
+      savePublicKeyBtn.disabled = false;
+      copyPrivateKeyBtn.disabled = false;
+      savePrivateKeyBtn.disabled = false;
+
+      messageDiv.style.color = 'green';
+      messageDiv.textContent = 'Key pair generated!';
+
+      generateBtn.disabled = !allowMoreKeysCheckbox.checked;
+      generateBtn.textContent = 'Generate Key Pair';
+    } catch (e) {
+      messageDiv.style.color = 'red';
+      messageDiv.textContent = 'Key generation failed: ' + e.message;
+      generateBtn.disabled = false;
+      generateBtn.textContent = 'Generate Key Pair';
+    }
+  });
+
+  allowMoreKeysCheckbox.addEventListener('change', () => {
+    messageDiv.textContent = '';
+    if (allowMoreKeysCheckbox.checked) {
+      generateBtn.disabled = false;
+    } else if (keysGenerated) {
+      generateBtn.disabled = true;
+    }
+  });
+
+  togglePrivateKeyBtn.addEventListener('click', () => {
+    const hidden = privateKeyArea.classList.toggle('hidden');
+    privateKeyLabel.classList.toggle('hidden');
+    privateKeyActions.classList.toggle('hidden');
+    togglePrivateKeyBtn.textContent = hidden ? 'Show Private Key' : 'Hide Private Key';
+  });
+
+  function copyToClipboard(text, what) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`${what} copied!`);
+    }).catch(() => {
+      showToast(`Failed to copy ${what}.`);
+    });
+  }
+
+  copyPublicKeyBtn.addEventListener('click', () => {
+    copyToClipboard(publicKeyArea.value, 'Public key');
+  });
+
+  copyPrivateKeyBtn.addEventListener('click', () => {
+    copyToClipboard(privateKeyArea.value, 'Private key');
+  });
+
+  function saveTextFile(filename, text) {
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  savePublicKeyBtn.addEventListener('click', () => {
+    saveTextFile('public_key.asc', publicKeyArea.value);
+    showToast('Public key saved!');
+  });
+
+  savePrivateKeyBtn.addEventListener('click', () => {
+    saveTextFile('private_key.asc', privateKeyArea.value);
+    showToast('Private key saved!');
+  });
+</script>
+</body>
+</html>
