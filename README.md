@@ -1,4 +1,4 @@
-# 🔐 PGP Web Tools
+# 🔐 WebPGP
 
 Simple PGP encryption and decryption tools built with HTML and JavaScript.
 
