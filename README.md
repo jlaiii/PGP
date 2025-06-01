@@ -2,9 +2,9 @@
 
 A simple, clean, and modern collection of web-based PGP tools for securely generating, encrypting, decrypting, and managing PGP keys — all in your browser, with no server interaction.
 
-## 🌐 Live Demo
+## 🌐 Live 
 
-> Load `index.html` in your browser to access the full toolkit.
+> Load `[index.html](https://jlaiii.github.io/PGP/)` in your browser to access the full toolkit.
 
 ## 🧰 Features
 
