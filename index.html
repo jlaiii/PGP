@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PGP Tools</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 30px 20px;
+      max-width: 600px;
+      margin: auto;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    p {
+      margin-bottom: 30px;
+      font-size: 1rem;
+      color: #4b5563;
+    }
+
+    .link-card {
+      display: block;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin: 10px 0;
+      text-align: left;
+      text-decoration: none;
+      color: #111827;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      transition: background-color 0.2s ease;
+    }
+
+    .link-card:hover {
+      background-color: #f3f4f6;
+    }
+
+    .link-title {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .link-desc {
+      font-size: 0.95rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 PGP Tools</h1>
+  <p>Simple and secure tools to generate, encrypt, decrypt, and manage PGP keys.</p>
+
+  <a class="link-card" href="pgpgen.html">
+    <div class="link-title">Key Generator</div>
+    <div class="link-desc">Generate public and private PGP key pairs</div>
+  </a>
+
+  <a class="link-card" href="encrypt.html">
+    <div class="link-title">Encrypt Message</div>
+    <div class="link-desc">Encrypt a message using your friend's public key</div>
+  </a>
+
+  <a class="link-card" href="decrypt.html">
+    <div class="link-title">Decrypt Message</div>
+    <div class="link-desc">Paste your private key and decrypt a message</div>
+  </a>
+
+  <a class="link-card" href="contacts.html">
+    <div class="link-title">Contacts</div>
+    <div class="link-desc">Manage saved public keys (friends, groups, etc)</div>
+  </a>
+</body>
+</html>
