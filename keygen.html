@@ -4,7 +4,7 @@
 
 <section style="margin-top: 20px;">
   <h3>Public Key</h3>
-  <textarea id="publicKey" readonly placeholder="Public key will appear here"></textarea>
+  <textarea id="publicKey" readonly placeholder="Public key will appear here" style="width:100%; height:150px;"></textarea>
 </section>
 
 <section style="margin-top: 20px;">
@@ -12,7 +12,7 @@
     Private Key
     <button id="toggle-private" style="margin-left: 10px; font-size: 0.9em; cursor: pointer;">Show</button>
   </h3>
-  <textarea id="privateKey" readonly style="display:none;" placeholder="Private key will appear here"></textarea>
+  <textarea id="privateKey" readonly style="display:none; width:100%; height:150px;" placeholder="Private key will appear here"></textarea>
 </section>
 
 <button id="save-btn" style="margin-top: 20px;">Save Keys as JSON</button>
@@ -40,15 +40,21 @@
     generateBtn.textContent = 'Generating... (this may take a few seconds)';
 
     try {
+      // Generate key pair
       const key = await openpgp.generateKey({
-        type: 'rsa',
-        rsaBits: 2048,
-        userIDs: [{ name: 'User', email: 'user@example.com' }],
-        format: 'armored'
+        type: 'rsa',           // RSA type
+        rsaBits: 2048,         // RSA key size
+        userIDs: [{ name: 'User', email: 'user@example.com' }], // user identity
+        passphrase: '',        // no passphrase to keep it simple
       });
 
-      publicKeyArea.value = key.publicKey;
-      privateKeyArea.value = key.privateKey;
+      // Export armored keys
+      const privateKeyArmored = key.privateKey; 
+      const publicKeyArmored = key.publicKey;
+
+      // Show keys in textareas
+      publicKeyArea.value = publicKeyArmored;
+      privateKeyArea.value = privateKeyArmored;
 
     } catch (err) {
       alert('Error generating keys: ' + err.message);
