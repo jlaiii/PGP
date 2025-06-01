@@ -1,40 +1,167 @@
-window.generateKeys = async function () {
-  try {
-    const { privateKey, publicKey } = await openpgp.generateKey({
-      type: 'rsa',
-      rsaBits: 2048,
-      format: 'armored',
-      userIDs: [{ name: 'User', email: 'user@example.com' }]
-    });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PGP Key Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #4F46E5;
+      --bg: #F9FAFB;
+      --text: #111827;
+      --border: #E5E7EB;
+    }
 
-    document.getElementById('publicKey').value = publicKey;
-    document.getElementById('privateKey').value = privateKey;
-  } catch (error) {
-    console.error('Key generation failed:', error);
-    alert('Failed to generate keys. See console for details.');
-  }
-};
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-window.togglePrivateKey = function () {
-  const privateKeyArea = document.getElementById('privateKey');
-  privateKeyArea.classList.toggle('hidden');
-};
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 40px;
+      line-height: 1.6;
+    }
 
-window.saveAsJSON = function () {
-  const publicKey = document.getElementById('publicKey').value;
-  const privateKey = document.getElementById('privateKey').value;
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
 
-  if (!publicKey || !privateKey) {
-    alert('Please generate keys first.');
-    return;
-  }
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin: 10px 0;
+    }
 
-  const data = { publicKey, privateKey };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'pgp_keys.json';
-  a.click();
-  URL.revokeObjectURL(url);
-};
+    button:hover {
+      background-color: #4338ca;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      resize: vertical;
+      font-family: monospace;
+      margin-top: 10px;
+      background-color: white;
+    }
+
+    .toggle {
+      cursor: pointer;
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .nav {
+      margin-top: 30px;
+    }
+
+    .nav a {
+      display: inline-block;
+      margin-right: 10px;
+      text-decoration: none;
+      background-color: var(--primary);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .nav a:hover {
+      background-color: #4338ca;
+    }
+
+    .section {
+      margin-bottom: 30px;
+    }
+  </style>
+  <!-- Use OpenPGP.js v4 (stable and compatible with your code) -->
+  <script src="https://cdn.jsdelivr.net/npm/openpgp@4.10.10/dist/openpgp.min.js"></script>
+</head>
+<body>
+  <h1>PGP Key Generator</h1>
+
+  <div class="section">
+    <button onclick="generateKeys()">Generate Key Pair</button>
+  </div>
+
+  <div class="section">
+    <h3>Public Key</h3>
+    <textarea id="publicKey" readonly placeholder="Your public key will appear here..."></textarea>
+  </div>
+
+  <div class="section">
+    <h3>Private Key <span class="toggle" onclick="togglePrivateKey()">(show/hide)</span></h3>
+    <textarea id="privateKey" readonly class="hidden" placeholder="Your private key will appear here..."></textarea>
+  </div>
+
+  <div class="section">
+    <button onclick="saveAsJSON()">Save Keys as JSON</button>
+  </div>
+
+  <div class="nav">
+    <a href="index.html">Home</a>
+    <a href="friends.html">Friends</a>
+    <a href="load.html">Load Keys & Friends</a>
+  </div>
+
+  <script>
+    async function generateKeys() {
+      const options = {
+        userIds: [{ name: 'User', email: 'user@example.com' }],
+        numBits: 2048,
+        passphrase: ''
+      };
+
+      const key = await openpgp.generateKey(options);
+
+      document.getElementById('publicKey').value = key.publicKeyArmored;
+      document.getElementById('privateKey').value = key.privateKeyArmored;
+    }
+
+    function togglePrivateKey() {
+      const privateKeyArea = document.getElementById('privateKey');
+      privateKeyArea.classList.toggle('hidden');
+    }
+
+    function saveAsJSON() {
+      const publicKey = document.getElementById('publicKey').value;
+      const privateKey = document.getElementById('privateKey').value;
+
+      if (!publicKey || !privateKey) {
+        alert("Please generate keys first.");
+        return;
+      }
+
+      const data = {
+        publicKey,
+        privateKey
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pgp_keys.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
