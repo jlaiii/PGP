@@ -62,20 +62,15 @@
       if (!res.ok) throw new Error('Failed to load ' + page);
       const text = await res.text();
 
-      // Parse HTML and extract body content only
       const parser = new DOMParser();
       const doc = parser.parseFromString(text, 'text/html');
       pageContent.innerHTML = doc.body.innerHTML;
-
-      // Optional: Run page-specific initialization here if needed
-      // e.g. if page === 'keygen.html' call initKeygen();
 
     } catch (err) {
       pageContent.innerHTML = `<p style="color: red;">Error loading page: ${err.message}</p>`;
     }
   }
 
-  // Set active button styling and load page
   function setActiveButton(clickedBtn) {
     buttons.forEach(btn => btn.classList.remove('active'));
     clickedBtn.classList.add('active');
