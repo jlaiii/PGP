@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PGP Encryptor</title>
+  <script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+    textarea, input {
+      width: 100%;
+      font-size: 1rem;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-family: monospace;
+    }
+    button {
+      background-color: #10b981;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    button:hover {
+      background-color: #059669;
+    }
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #10b981;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
+    }
+    #countdown {
+      font-weight: 600;
+      color: #dc2626;
+      margin-top: -8px;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      height: 1.3rem;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>Encrypt a Message</h1>
+
+  <label for="publicKey">Recipient's Public Key:</label>
+  <textarea id="publicKey" placeholder="Paste the recipient's public key here..."></textarea>
+
+  <label for="message">Message to Encrypt:</label>
+  <textarea id="message" placeholder="Enter your message here..."></textarea>
+  <div id="countdown"></div>
+
+  <button onclick="encryptMessage()">Encrypt Message</button>
+
+  <label for="output">Encrypted Message:</label>
+  <textarea id="output" readonly placeholder="Encrypted message will appear here..."></textarea>
+
+  <button onclick="copyOutput()">Copy Encrypted Message</button>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let countdownInterval = null;
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    async function encryptMessage() {
+      clearInterval(countdownInterval);
+      document.getElementById('countdown').textContent = '';
+
+      const publicKeyArmored = document.getElementById('publicKey').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const output = document.getElementById('output');
+
+      if (!publicKeyArmored || !message) {
+        showToast('Public key and message are required.');
+        return;
+      }
+
+      try {
+        const pubkey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+
+        const encrypted = await openpgp.encrypt({
+          message: await openpgp.createMessage({ text: message }),
+          encryptionKeys: pubkey
+        });
+
+        output.value = encrypted;
+        showToast('Message encrypted!');
+
+        // Start 30-second countdown to clear plaintext
+        let timeLeft = 30;
+        const countdownEl = document.getElementById('countdown');
+        countdownEl.textContent = `Plaintext will be cleared in ${timeLeft} seconds.`;
+        countdownInterval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            countdownEl.textContent = '';
+            document.getElementById('message').value = '';
+            showToast('Plaintext cleared for security.');
+          } else {
+            countdownEl.textContent = `Plaintext will be cleared in ${timeLeft} seconds.`;
+          }
+        }, 1000);
+      } catch (err) {
+        output.value = '';
+        showToast('Encryption failed.');
+        console.error('Encryption error:', err);
+      }
+    }
+
+    function copyOutput() {
+      const output = document.getElementById('output');
+      if (!output.value) {
+        showToast('Nothing to copy.');
+        return;
+      }
+      navigator.clipboard.writeText(output.value).then(() => {
+        showToast('Encrypted message copied!');
+      });
+    }
+  </script>
+</body>
+</html>
