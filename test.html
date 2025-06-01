@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flashing Text Test</title>
+  <style>
+    .flashing {
+      animation: flash 1s infinite;
+      font-size: 2em;
+      font-weight: bold;
+      color: red;
+    }
+
+    @keyframes flash {
+      0%   { opacity: 1; }
+      50%  { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="flashing">This is a test. Hi!</div>
+</body>
+</html>
