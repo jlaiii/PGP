@@ -227,11 +227,12 @@
   copyPrivateKeyBtn.disabled = true;
   savePrivateKeyBtn.disabled = true;
 
-  function showToast(msg) {
+  function showToast(msg, isError = false) {
     const toast = document.getElementById('toast');
     toast.textContent = msg;
+    toast.style.backgroundColor = isError ? '#ef4444' : '#10b981'; 
     toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
+    setTimeout(() => toast.classList.remove('show'), 2500);
   }
 
   toggleAdvancedBtn.addEventListener('click', () => {
@@ -251,8 +252,7 @@
 
   generateBtn.addEventListener('click', async () => {
     if (keysGenerated && !allowMoreKeysCheckbox.checked) {
-      messageDiv.style.color = 'red';
-      messageDiv.textContent = 'Keys already generated. Enable "Allow generating more keys" to overwrite.';
+      showToast('Keys already generated. Enable "Allow generating more keys" to overwrite.', true);
       return;
     }
 
@@ -295,12 +295,10 @@
       togglePrivateKeyBtn.disabled = false;
 
       keysGenerated = true;
-      messageDiv.style.color = 'green';
-      messageDiv.textContent = 'PGP Key pair generated successfully!';
+      showToast('PGP Key pair generated successfully!', false);
 
     } catch (error) {
-      messageDiv.style.color = 'red';
-      messageDiv.textContent = `Error generating keys: ${error.message || error}`;
+      showToast(`Error generating keys: ${error.message || error}`, true);
     } finally {
       generateBtn.disabled = false;
       generateBtn.textContent = 'Generate Key Pair';
