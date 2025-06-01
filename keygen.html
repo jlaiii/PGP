@@ -1,143 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>PGP Key Generator</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root {
-      --primary: #4F46E5;
-      --bg: #F9FAFB;
-      --text: #111827;
-      --border: #E5E7EB;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      padding: 40px;
-      line-height: 1.6;
+      font-family: Arial, sans-serif;
+      padding: 2em;
+      background: #f0f2f5;
     }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 20px;
-    }
-
-    button {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      margin: 10px 0;
-    }
-
-    button:hover {
-      background-color: #4338ca;
-    }
-
     textarea {
       width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      resize: vertical;
-      font-family: monospace;
+      height: 200px;
       margin-top: 10px;
-      background-color: white;
     }
-
-    .toggle {
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px 20px 0;
+      background-color: #4F46E5;
+      color: white;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
-      color: var(--primary);
-      font-weight: 600;
     }
-
     .hidden {
       display: none;
     }
-
-    .nav {
-      margin-top: 30px;
-    }
-
-    .nav a {
-      display: inline-block;
-      margin-right: 10px;
-      text-decoration: none;
-      background-color: var(--primary);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-weight: 500;
-    }
-
-    .nav a:hover {
-      background-color: #4338ca;
-    }
-
-    .section {
-      margin-bottom: 30px;
+    .toggle {
+      cursor: pointer;
+      color: #4F46E5;
+      text-decoration: underline;
     }
   </style>
-  <!-- Use OpenPGP.js v4 (stable and compatible with your code) -->
   <script src="https://cdn.jsdelivr.net/npm/openpgp@4.10.10/dist/openpgp.min.js"></script>
 </head>
 <body>
+
   <h1>PGP Key Generator</h1>
 
-  <div class="section">
-    <button onclick="generateKeys()">Generate Key Pair</button>
-  </div>
+  <button onclick="generateKeyPair()">Generate Key Pair</button>
 
-  <div class="section">
-    <h3>Public Key</h3>
-    <textarea id="publicKey" readonly placeholder="Your public key will appear here..."></textarea>
-  </div>
+  <h3>Public Key</h3>
+  <textarea id="publicKey" readonly></textarea>
 
-  <div class="section">
-    <h3>Private Key <span class="toggle" onclick="togglePrivateKey()">(show/hide)</span></h3>
-    <textarea id="privateKey" readonly class="hidden" placeholder="Your private key will appear here..."></textarea>
-  </div>
+  <h3>
+    Private Key
+    <span class="toggle" onclick="togglePrivateKey()">[show/hide]</span>
+  </h3>
+  <textarea id="privateKey" readonly class="hidden"></textarea>
 
-  <div class="section">
-    <button onclick="saveAsJSON()">Save Keys as JSON</button>
-  </div>
-
-  <div class="nav">
-    <a href="index.html">Home</a>
-    <a href="friends.html">Friends</a>
-    <a href="load.html">Load Keys & Friends</a>
-  </div>
+  <button onclick="saveAsJSON()">Save as JSON</button>
 
   <script>
-    async function generateKeys() {
-      const options = {
-        userIds: [{ name: 'User', email: 'user@example.com' }],
-        numBits: 2048,
-        passphrase: ''
-      };
+    async function generateKeyPair() {
+      try {
+        const options = {
+          userIds: [{ name: 'PGP User', email: 'user@example.com' }],
+          numBits: 2048,
+          passphrase: '' // Can be left empty or set to secure string
+        };
 
-      const key = await openpgp.generateKey(options);
+        const key = await openpgp.generateKey(options);
 
-      document.getElementById('publicKey').value = key.publicKeyArmored;
-      document.getElementById('privateKey').value = key.privateKeyArmored;
+        document.getElementById('publicKey').value = key.publicKeyArmored;
+        document.getElementById('privateKey').value = key.privateKeyArmored;
+      } catch (err) {
+        console.error(err);
+        alert("Key generation failed. See console.");
+      }
     }
 
     function togglePrivateKey() {
-      const privateKeyArea = document.getElementById('privateKey');
-      privateKeyArea.classList.toggle('hidden');
+      const el = document.getElementById('privateKey');
+      el.classList.toggle('hidden');
     }
 
     function saveAsJSON() {
@@ -145,20 +81,18 @@
       const privateKey = document.getElementById('privateKey').value;
 
       if (!publicKey || !privateKey) {
-        alert("Please generate keys first.");
+        alert("Generate keys first.");
         return;
       }
 
-      const data = {
-        publicKey,
-        privateKey
-      };
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const blob = new Blob(
+        [JSON.stringify({ publicKey, privateKey }, null, 2)],
+        { type: "application/json" }
+      );
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'pgp_keys.json';
+      a.download = "pgp_keys.json";
       a.click();
       URL.revokeObjectURL(url);
     }
