@@ -65,7 +65,7 @@
     }
     #countdown {
       font-weight: 600;
-      color: #dc2626; /* red */
+      color: #dc2626;
       margin-top: -8px;
       margin-bottom: 10px;
       font-size: 0.95rem;
@@ -77,8 +77,8 @@
 <body>
   <h1>Encrypt a Message</h1>
 
-  <label for="friendKey">Friend's Public Key:</label>
-  <textarea id="friendKey" placeholder="Paste your friend's public key here..."></textarea>
+  <label for="publicKey">Recipient's Public Key:</label>
+  <textarea id="publicKey" placeholder="Paste the recipient's public key here..."></textarea>
 
   <label for="message">Message to Encrypt:</label>
   <textarea id="message" placeholder="Enter your message here..."></textarea>
@@ -107,17 +107,17 @@
       clearInterval(countdownInterval);
       document.getElementById('countdown').textContent = '';
 
-      const friendKey = document.getElementById('friendKey').value.trim();
+      const publicKeyArmored = document.getElementById('publicKey').value.trim();
       const message = document.getElementById('message').value.trim();
       const output = document.getElementById('output');
 
-      if (!friendKey || !message) {
+      if (!publicKeyArmored || !message) {
         showToast('Public key and message are required.');
         return;
       }
 
       try {
-        const pubkey = await openpgp.readKey({ armoredKey: friendKey });
+        const pubkey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
         const encrypted = await openpgp.encrypt({
           message: await openpgp.createMessage({ text: message }),
@@ -127,7 +127,7 @@
         output.value = encrypted;
         showToast('Message encrypted!');
 
-        // Start 30 second countdown to clear plaintext
+        // Start 30-second countdown to clear plaintext
         let timeLeft = 30;
         const countdownEl = document.getElementById('countdown');
         countdownEl.textContent = `Plaintext will be cleared in ${timeLeft} seconds.`;
