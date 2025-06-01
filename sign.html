@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PGP Sign Message</title>
+  <script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+    textarea, input[type="password"] {
+      width: 100%;
+      font-family: monospace;
+      font-size: 1rem;
+      padding: 10px;
+      margin: 6px 0 12px 0;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px 0 20px 0;
+      user-select: none;
+    }
+    .danger-button {
+      background-color: #dc2626;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 15px;
+    }
+    .hidden {
+      display: none;
+    }
+    #copyBtn {
+      background-color: #10b981;
+      margin-top: -12px;
+      margin-bottom: 20px;
+      width: 100%;
+      user-select: none;
+    }
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #10b981;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+    .toast.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>PGP Sign Message</h1>
+
+  <div id="privateKeyContainer">
+    <label for="privateKeyArea">Your Private Key:</label>
+    <textarea id="privateKeyArea" placeholder="Paste your private key here..."></textarea>
+  </div>
+  <button id="toggleKeyBtn" class="danger-button hidden">Show Private Key</button>
+
+  <label for="passphraseInput">Passphrase (if your private key is encrypted):</label>
+  <input type="password" id="passphraseInput" placeholder="Enter passphrase (optional)" />
+
+  <label for="plainMessageArea">Plain Message to Sign:</label>
+  <textarea id="plainMessageArea" placeholder="Type the message you want to sign..."></textarea>
+
+  <button id="signBtn" disabled>Sign Message</button>
+
+  <label for="signedMessageArea">Signed Message:</label>
+  <textarea id="signedMessageArea" readonly placeholder="The signed message will appear here..."></textarea>
+
+  <button id="copyBtn" disabled>Copy Signed Message</button>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const privateKeyArea = document.getElementById('privateKeyArea');
+    const passphraseInput = document.getElementById('passphraseInput');
+    const plainMessageArea = document.getElementById('plainMessageArea');
+    const signedMessageArea = document.getElementById('signedMessageArea');
+    const signBtn = document.getElementById('signBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const privateKeyContainer = document.getElementById('privateKeyContainer');
+    const toggleKeyBtn = document.getElementById('toggleKeyBtn');
+    const toast = document.getElementById('toast');
+
+    let privateKeyObj = null;
+    let isKeyHidden = false;
+
+    function updateSignButton() {
+      signBtn.disabled = !(privateKeyArea.value.trim() && plainMessageArea.value.trim());
+    }
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    privateKeyArea.addEventListener('input', () => {
+      privateKeyObj = null;
+      updateSignButton();
+      copyBtn.disabled = true;
+      signedMessageArea.value = '';
+      if (privateKeyArea.value.trim().length > 0 && !isKeyHidden) {
+        privateKeyContainer.classList.add('hidden');
+        toggleKeyBtn.classList.remove('hidden');
+        toggleKeyBtn.textContent = 'Show Private Key';
+        isKeyHidden = true;
+      }
+    });
+
+    plainMessageArea.addEventListener('input', () => {
+      updateSignButton();
+      copyBtn.disabled = true;
+      signedMessageArea.value = '';
+    });
+
+    toggleKeyBtn.addEventListener('click', () => {
+      if (isKeyHidden) {
+        privateKeyContainer.classList.remove('hidden');
+        toggleKeyBtn.textContent = 'Hide Private Key';
+        isKeyHidden = false;
+      } else {
+        privateKeyContainer.classList.add('hidden');
+        toggleKeyBtn.textContent = 'Show Private Key';
+        isKeyHidden = true;
+      }
+    });
+
+    signBtn.addEventListener('click', async () => {
+      signBtn.disabled = true;
+      signBtn.textContent = 'Signing...';
+      signedMessageArea.value = '';
+      copyBtn.disabled = true;
+
+      try {
+        privateKeyObj = await openpgp.readPrivateKey({
+          armoredKey: privateKeyArea.value.trim()
+        });
+
+        if (!privateKeyObj.isDecrypted()) {
+          const passphrase = passphraseInput.value;
+          if (!passphrase) throw new Error('Encrypted key requires a passphrase.');
+          privateKeyObj = await openpgp.decryptKey({
+            privateKey: privateKeyObj,
+            passphrase
+          });
+        }
+
+        const signedMessage = await openpgp.sign({
+          message: await openpgp.createCleartextMessage({ text: plainMessageArea.value.trim() }),
+          signingKeys: privateKeyObj
+        });
+
+        signedMessageArea.value = signedMessage;
+        copyBtn.disabled = false;
+        showToast('Message signed successfully!');
+      } catch (e) {
+        signedMessageArea.value = 'Error signing message: ' + e.message;
+      } finally {
+        signBtn.disabled = false;
+        signBtn.textContent = 'Sign Message';
+      }
+    });
+
+    copyBtn.addEventListener('click', () => {
+      signedMessageArea.select();
+      document.execCommand('copy');
+      showToast('Signed message copied to clipboard!');
+    });
+  </script>
+</body>
+</html>

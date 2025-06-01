@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PGP Verify Signature</title>
+  <script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f9fafb;
+      color: #111827;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+    textarea {
+      width: 100%;
+      font-family: monospace;
+      font-size: 1rem;
+      padding: 10px;
+      margin: 6px 0 12px 0;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    button {
+      background-color: #10b981;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px 0 20px 0;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 15px;
+    }
+    #result {
+      font-weight: 600;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>PGP Verify Signature</h1>
+
+  <label for="publicKeyArea">Sender's Public Key:</label>
+  <textarea id="publicKeyArea" placeholder="Paste sender's public key here..."></textarea>
+
+  <label for="signedMessageArea">Signed Message (cleartext format):</label>
+  <textarea id="signedMessageArea" placeholder="Paste the signed message here..."></textarea>
+
+  <button id="verifyBtn">Verify Signature</button>
+
+  <div id="result"></div>
+
+  <script>
+    const publicKeyArea = document.getElementById('publicKeyArea');
+    const signedMessageArea = document.getElementById('signedMessageArea');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const result = document.getElementById('result');
+
+    verifyBtn.addEventListener('click', async () => {
+      result.textContent = '';
+      result.style.color = 'black';
+
+      try {
+        const publicKey = await openpgp.readKey({ armoredKey: publicKeyArea.value.trim() });
+        const message = await openpgp.readCleartextMessage({ cleartextMessage: signedMessageArea.value.trim() });
+
+        const verification = await openpgp.verify({
+          message,
+          verificationKeys: publicKey
+        });
+
+        const signatureValid = await verification.signatures[0].verified;
+
+        if (signatureValid) {
+          result.style.color = 'green';
+          result.textContent = '✅ Signature is VALID and untampered.';
+        } else {
+          result.style.color = 'red';
+          result.textContent = '❌ Signature is INVALID or message was tampered with.';
+        }
+      } catch (err) {
+        result.style.color = 'red';
+        result.textContent = 'Error verifying signature: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>

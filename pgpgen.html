@@ -185,8 +185,8 @@
 <label for="privateKeyArea" id="privateKeyLabel" class="hidden">Private Key:</label>
 <textarea id="privateKeyArea" class="hidden" readonly placeholder="Your private key will appear here..."></textarea>
 <div class="key-actions hidden" id="privateKeyActions">
-  <button id="copyPrivateKeyBtn">Copy Private Key</button>
-  <button id="savePrivateKeyBtn">Save Private Key</button>
+  <button id="copyPrivateKeyBtn" disabled>Copy Private Key</button>
+  <button id="savePrivateKeyBtn" disabled>Save Private Key</button>
 </div>
 
 <div id="message"></div>
@@ -221,6 +221,11 @@
   const passphraseInput = document.getElementById('passphraseInput');
 
   let keysGenerated = false;
+
+  // Disable private key buttons & toggle initially
+  togglePrivateKeyBtn.disabled = true;
+  copyPrivateKeyBtn.disabled = true;
+  savePrivateKeyBtn.disabled = true;
 
   function showToast(msg) {
     const toast = document.getElementById('toast');
@@ -283,8 +288,11 @@
 
       copyPublicKeyBtn.disabled = false;
       savePublicKeyBtn.disabled = false;
+
+      // Enable private key buttons & toggle after key generation
       copyPrivateKeyBtn.disabled = false;
       savePrivateKeyBtn.disabled = false;
+      togglePrivateKeyBtn.disabled = false;
 
       keysGenerated = true;
       messageDiv.style.color = 'green';
@@ -335,6 +343,8 @@
   });
 
   togglePrivateKeyBtn.addEventListener('click', () => {
+    if (togglePrivateKeyBtn.disabled) return;
+
     const hidden = privateKeyArea.classList.toggle('hidden');
     privateKeyLabel.classList.toggle('hidden');
     privateKeyActions.classList.toggle('hidden');
