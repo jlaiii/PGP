@@ -1,12 +1,12 @@
 # 🔐 WebPGP
 
-Simple PGP encryption and decryption tools built with HTML and JavaScript.
-https://jlaiii.github.io/WebPGP/
+**Simple PGP encryption and decryption tools built with HTML and JavaScript.**  
 📍 **Live Site:** [https://jlaiii.github.io/WebPGP/](https://jlaiii.github.io/WebPGP/)
 
 ## 🏠 Landing Page
 
-- [index.html](https://jlaiii.github.io/WebPGP/index.html) – Main home / entry point
+- [index.html](https://jlaiii.github.io/WebPGP/index.html) – Main landing page and entry point to the app
+
 
 ## 🧰 Tools
 
