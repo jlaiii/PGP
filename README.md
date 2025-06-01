@@ -1,91 +1,65 @@
-# 🔐 PGP Key Generator & Friend Manager
+# 🔐 PGP Tools
 
-[Live Demo](https://jlaiii.github.io/PGP/)
+A simple, clean, and modern collection of web-based PGP tools for securely generating, encrypting, decrypting, and managing PGP keys — all in your browser, with no server interaction.
 
-A simple and intuitive web-based tool to generate PGP key pairs, manage friends' public keys, encrypt messages, and decrypt received messages — all right in your browser with no backend required.
+## 🌐 Live Demo
 
----
+> Load `index.html` in your browser to access the full toolkit.
 
-## Features
+## 🧰 Features
 
-- **PGP Key Generation**  
-  Create your own RSA 2048-bit PGP key pair with an optional passphrase.
+- **PGP Key Generator** (`pgpgen.html`)  
+  Generate RSA public and private key pairs. Option to show/hide private key, copy to clipboard, and download as JSON.
 
-- **Public Key Management**  
-  View and copy your public key to share with others.
+- **Encrypt Message** (`encrypt.html`)  
+  Encrypt a message using a friend's public key. Clean UI with copy-to-clipboard and 30-second auto-clear feature.
 
-- **Friend Management**  
-  Add and store friends' names and their public keys securely in your profile.
+- **Decrypt Message** (`decrypt.html`)  
+  Paste your private key and a message to decrypt it securely in your browser.
 
-- **Message Encryption**  
-  Encrypt messages to your own key or to any friend in your list.
+- **Contacts Manager** (`contacts.html`)  
+  Import/export public key files. Organize and load public keys for quick encryption.
 
-- **Message Decryption**  
-  Paste PGP-encrypted messages and decrypt them using your private key and passphrase.
+## 🗂 File Structure
 
-- **Profile Save & Load**  
-  Download your entire profile (keys + friends) as a JSON file and load it later.
+```
+📁 /your-repo
+├── index.html           # Homepage linking to all tools
+├── pgpgen.html          # Key generator tool
+├── encrypt.html         # Message encryption tool
+├── decrypt.html         # Message decryption tool
+├── contacts.html        # Manage public key contacts
+└── README.md            # You're reading it!
+```
 
----
+## ⚙️ Tech Stack
 
-## How to Use
+- HTML5 + CSS3
+- Vanilla JavaScript
+- [OpenPGP.js](https://github.com/openpgpjs/openpgpjs) (v5.5.0)
 
-1. **Generate your keys:**  
-   Enter your name, email, and optionally a passphrase, then click **Generate Key**.
+> All operations run **entirely in-browser**. No data is ever sent to a server.
 
-2. **Manage your public key:**  
-   Show or hide your public key and copy it to share.
+## 📦 Setup
 
-3. **Add friends:**  
-   Input a friend's name and paste their public key, then add them to your friends list.
+Clone this repo and open `index.html` in your browser:
 
-4. **Encrypt messages:**  
-   Select a friend (or none to encrypt to yourself), type your message, and encrypt it.
+```bash
+git clone https://github.com/yourusername/pgp-tools.git
+cd pgp-tools
+open index.html  # or just double-click it
+```
 
-5. **Decrypt messages:**  
-   Paste an encrypted message, enter your passphrase if needed, and decrypt.
+> 💡 No build step or server required — this is a fully static project.
 
-6. **Save your profile:**  
-   Download your keys and friends as a `.json` file.
+## 🔐 Why PGP?
 
-7. **Load your profile:**  
-   Upload your saved profile file to restore your keys and friends.
+PGP (Pretty Good Privacy) allows for secure communication using public/private key encryption. These tools make it easier to use PGP for personal or small-team encryption workflows.
 
----
+## 📄 License
 
-## Technology
-
-- Pure HTML, CSS, and JavaScript  
-- Uses [OpenPGP.js v5.5.0](https://github.com/openpgpjs/openpgpjs) for cryptographic operations  
-- Runs entirely client-side in the browser—no server needed
-
----
-
-## Security Notes
-
-- Your private keys and passphrase never leave your browser; all cryptographic actions happen locally.
-- Profile data is stored only in memory or saved by you manually — no backend storage.
-- Keep your profile `.json` file secure as it contains your private keys.
+MIT License — free to use, modify, and distribute.
 
 ---
 
-## Crypto Donations
-
-If you find this tool useful and want to support development, you can send donations to the following addresses:
-
-- **Bitcoin (BTC):** `bc1quk2r3sukuv4pjumjqpj2hjl6lnvkcq6ws7uanl`
-- **Litecoin (LTC):** `ltc1qx3lgmqal9ye579ln4z3v9vza27wr6xglv94u4t`
-- **Ethereum (ETH):** `0x037a45482e5d0a988AA5ff5F6804DCe3276488D6`
-- **Solana (SOL):** `8PzeFDjKUQf9UDY4ezNdG9927wxKmeETTTyvv2GtuK1a`
-- **Monero (XMR):** `85QzVMEGFvogZzGUqmB6aQTcLucKKPCSCiP6rAeNN7nMbM9u5EVgGKPXocrxp6FzwKdVGooPHJaKjMyFsA3ma6zJ1yifbPb`
-
----
-
-## Feedback & Contributions
-
-Feel free to open issues or pull requests on the [GitHub repository](https://github.com/jlaiii/PGP) to improve this project.
-
-
----
-
-**Try it out now:** [https://jlaiii.github.io/PGP/](https://jlaiii.github.io/PGP/)
+> Created with ❤️ to make PGP easy and accessible for everyone.
