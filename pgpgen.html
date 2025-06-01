@@ -62,6 +62,15 @@
     display: block;
     margin-top: 15px;
   }
+  input[type="text"], input[type="email"], input[type="password"], select {
+    width: 100%;
+    padding: 6px 10px;
+    margin-top: 6px;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    box-sizing: border-box;
+    font-size: 1rem;
+  }
   #message {
     margin-top: 8px;
     min-height: 1.3em;
@@ -107,17 +116,61 @@
     opacity: 1;
     pointer-events: auto;
   }
+  .advanced-settings {
+    background: #e0f2fe;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
 </style>
 </head>
 <body>
 
 <h1>PGP Key Generator</h1>
 
+<label for="nameInput">Name (optional):</label>
+<input type="text" id="nameInput" placeholder="Your Name" />
+
+<label for="emailInput">Email (optional):</label>
+<input type="email" id="emailInput" placeholder="Your Email" />
+
+<label for="passphraseInput">Passphrase (optional):</label>
+<input type="password" id="passphraseInput" placeholder="Enter passphrase to protect private key" />
+
 <button id="generateBtn">Generate Key Pair</button>
 
 <div class="checkbox-container">
   <input type="checkbox" id="allowMoreKeys" />
   <label for="allowMoreKeys">Allow generating more keys (overwrite existing)</label>
+</div>
+
+<div class="toggle-btn" id="toggleAdvancedBtn">Show Advanced Settings</div>
+
+<div id="advancedSettings" class="advanced-settings hidden">
+  <label for="keyType">Key Type:</label>
+  <select id="keyType" name="keyType">
+    <option value="rsa" selected>RSA</option>
+    <option value="ecc">ECC (Elliptic Curve)</option>
+  </select>
+
+  <div id="rsaOptions">
+    <label for="rsaBits">RSA Key Size (bits):</label>
+    <select id="rsaBits" name="rsaBits">
+      <option value="2048" selected>2048</option>
+      <option value="3072">3072</option>
+      <option value="4096">4096</option>
+    </select>
+  </div>
+
+  <div id="eccOptions" class="hidden">
+    <label for="curve">Curve:</label>
+    <select id="curve" name="curve">
+      <option value="curve25519" selected>curve25519</option>
+      <option value="p256">p256</option>
+      <option value="p384">p384</option>
+      <option value="p521">p521</option>
+    </select>
+  </div>
 </div>
 
 <label for="publicKeyArea">Public Key:</label>
@@ -155,6 +208,18 @@
   const savePrivateKeyBtn = document.getElementById('savePrivateKeyBtn');
   const privateKeyActions = document.getElementById('privateKeyActions');
 
+  const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
+  const advancedSettings = document.getElementById('advancedSettings');
+  const keyTypeSelect = document.getElementById('keyType');
+  const rsaOptions = document.getElementById('rsaOptions');
+  const eccOptions = document.getElementById('eccOptions');
+  const rsaBitsSelect = document.getElementById('rsaBits');
+  const curveSelect = document.getElementById('curve');
+
+  const nameInput = document.getElementById('nameInput');
+  const emailInput = document.getElementById('emailInput');
+  const passphraseInput = document.getElementById('passphraseInput');
+
   let keysGenerated = false;
 
   function showToast(msg) {
@@ -163,6 +228,21 @@
     toast.classList.add('show');
     setTimeout(() => toast.classList.remove('show'), 2000);
   }
+
+  toggleAdvancedBtn.addEventListener('click', () => {
+    const isHidden = advancedSettings.classList.toggle('hidden');
+    toggleAdvancedBtn.textContent = isHidden ? 'Show Advanced Settings' : 'Hide Advanced Settings';
+  });
+
+  keyTypeSelect.addEventListener('change', () => {
+    if (keyTypeSelect.value === 'rsa') {
+      rsaOptions.classList.remove('hidden');
+      eccOptions.classList.add('hidden');
+    } else {
+      rsaOptions.classList.add('hidden');
+      eccOptions.classList.remove('hidden');
+    }
+  });
 
   generateBtn.addEventListener('click', async () => {
     if (keysGenerated && !allowMoreKeysCheckbox.checked) {
@@ -176,70 +256,68 @@
     generateBtn.textContent = 'Generating...';
 
     try {
-      const { privateKey, publicKey } = await openpgp.generateKey({
-        type: 'rsa',
-        rsaBits: 2048,
-        userIDs: [{ name: 'User', email: 'user@example.com' }],
-        format: 'armored'
-      });
+      // Create userIDs array with single entry from name/email inputs (if any)
+      const userID = {};
+      if (nameInput.value.trim()) userID.name = nameInput.value.trim();
+      if (emailInput.value.trim()) userID.email = emailInput.value.trim();
 
-      publicKeyArea.value = publicKey;
-      privateKeyArea.value = privateKey;
+      const userIDs = Object.keys(userID).length ? [userID] : [{}];
 
-      keysGenerated = true;
+      let keyOptions = {
+        userIDs: userIDs,
+        passphrase: passphraseInput.value || undefined,
+      };
+
+      if (keyTypeSelect.value === 'rsa') {
+        keyOptions.type = 'rsa';
+        keyOptions.rsaBits = parseInt(rsaBitsSelect.value, 10);
+      } else {
+        keyOptions.type = 'ecc';
+        keyOptions.curve = curveSelect.value;
+      }
+
+      const key = await openpgp.generateKey(keyOptions);
+
+      publicKeyArea.value = key.publicKey;
+      privateKeyArea.value = key.privateKey;
 
       copyPublicKeyBtn.disabled = false;
       savePublicKeyBtn.disabled = false;
       copyPrivateKeyBtn.disabled = false;
       savePrivateKeyBtn.disabled = false;
 
+      keysGenerated = true;
       messageDiv.style.color = 'green';
-      messageDiv.textContent = 'Key pair generated!';
+      messageDiv.textContent = 'PGP Key pair generated successfully!';
 
-      generateBtn.disabled = !allowMoreKeysCheckbox.checked;
-      generateBtn.textContent = 'Generate Key Pair';
-    } catch (e) {
+    } catch (error) {
       messageDiv.style.color = 'red';
-      messageDiv.textContent = 'Key generation failed: ' + e.message;
+      messageDiv.textContent = `Error generating keys: ${error.message || error}`;
+    } finally {
       generateBtn.disabled = false;
       generateBtn.textContent = 'Generate Key Pair';
     }
   });
 
-  allowMoreKeysCheckbox.addEventListener('change', () => {
-    messageDiv.textContent = '';
-    if (allowMoreKeysCheckbox.checked) {
-      generateBtn.disabled = false;
-    } else if (keysGenerated) {
-      generateBtn.disabled = true;
-    }
-  });
-
-  togglePrivateKeyBtn.addEventListener('click', () => {
-    const hidden = privateKeyArea.classList.toggle('hidden');
-    privateKeyLabel.classList.toggle('hidden');
-    privateKeyActions.classList.toggle('hidden');
-    togglePrivateKeyBtn.textContent = hidden ? 'Show Private Key' : 'Hide Private Key';
-  });
-
-  function copyToClipboard(text, what) {
+  function copyToClipboard(text, successMsg) {
     navigator.clipboard.writeText(text).then(() => {
-      showToast(`${what} copied!`);
+      showToast(successMsg);
     }).catch(() => {
-      showToast(`Failed to copy ${what}.`);
+      messageDiv.style.color = 'red';
+      messageDiv.textContent = 'Failed to copy to clipboard.';
     });
   }
 
   copyPublicKeyBtn.addEventListener('click', () => {
-    copyToClipboard(publicKeyArea.value, 'Public key');
+    copyToClipboard(publicKeyArea.value, 'Public key copied to clipboard');
   });
 
   copyPrivateKeyBtn.addEventListener('click', () => {
-    copyToClipboard(privateKeyArea.value, 'Private key');
+    copyToClipboard(privateKeyArea.value, 'Private key copied to clipboard');
   });
 
-  function saveTextFile(filename, text) {
-    const blob = new Blob([text], { type: 'text/plain' });
+  function saveToFile(content, filename) {
+    const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -249,14 +327,20 @@
   }
 
   savePublicKeyBtn.addEventListener('click', () => {
-    saveTextFile('public_key.asc', publicKeyArea.value);
-    showToast('Public key saved!');
+    saveToFile(publicKeyArea.value, 'pgp-public-key.asc');
   });
 
   savePrivateKeyBtn.addEventListener('click', () => {
-    saveTextFile('private_key.asc', privateKeyArea.value);
-    showToast('Private key saved!');
+    saveToFile(privateKeyArea.value, 'pgp-private-key.asc');
+  });
+
+  togglePrivateKeyBtn.addEventListener('click', () => {
+    const hidden = privateKeyArea.classList.toggle('hidden');
+    privateKeyLabel.classList.toggle('hidden');
+    privateKeyActions.classList.toggle('hidden');
+    togglePrivateKeyBtn.textContent = hidden ? 'Show Private Key' : 'Hide Private Key';
   });
 </script>
+
 </body>
 </html>
