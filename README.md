@@ -35,15 +35,6 @@
 - 📦 **Portable** – Can be downloaded and used completely offline.  
 - 🧑‍💻 **Open Source** – Modify, audit, and contribute freely.
 
----
-
-## 📘 Project Facts
-
-- 🛠 Built with: Vanilla HTML, CSS, JavaScript, and [OpenPGP.js](https://github.com/openpgpjs/openpgpjs)  
-- 🗂 Total Pages: **6**  
-- 📁 Hosting: [GitHub Pages](https://pages.github.com/)  
-- 👤 Maintainer: [@jlaiii](https://github.com/jlaiii)  
-- 🕶️ License: MIT
 
 ---
 
