@@ -1,3 +1,4 @@
+<!-- keygen.html -->
 <h1>PGP Key Generator</h1>
 
 <button id="generate-btn">Generate Key Pair</button>
@@ -17,71 +18,66 @@
 
 <button id="save-btn" style="margin-top: 20px;">Save Keys as JSON</button>
 
-<script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
 <script>
-  const generateBtn = document.getElementById('generate-btn');
-  const saveBtn = document.getElementById('save-btn');
-  const togglePrivateBtn = document.getElementById('toggle-private');
-  const publicKeyArea = document.getElementById('publicKey');
-  const privateKeyArea = document.getElementById('privateKey');
+  function initKeygen() {
+    const generateBtn = document.getElementById('generate-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const togglePrivateBtn = document.getElementById('toggle-private');
+    const publicKeyArea = document.getElementById('publicKey');
+    const privateKeyArea = document.getElementById('privateKey');
 
-  togglePrivateBtn.addEventListener('click', () => {
-    if (privateKeyArea.style.display === 'none') {
-      privateKeyArea.style.display = 'block';
-      togglePrivateBtn.textContent = 'Hide';
-    } else {
-      privateKeyArea.style.display = 'none';
-      togglePrivateBtn.textContent = 'Show';
-    }
-  });
+    togglePrivateBtn.addEventListener('click', () => {
+      if (privateKeyArea.style.display === 'none') {
+        privateKeyArea.style.display = 'block';
+        togglePrivateBtn.textContent = 'Hide';
+      } else {
+        privateKeyArea.style.display = 'none';
+        togglePrivateBtn.textContent = 'Show';
+      }
+    });
 
-  generateBtn.addEventListener('click', async () => {
-    generateBtn.disabled = true;
-    generateBtn.textContent = 'Generating... (this may take a few seconds)';
+    generateBtn.addEventListener('click', async () => {
+      generateBtn.disabled = true;
+      generateBtn.textContent = 'Generating... (this may take a few seconds)';
 
-    try {
-      // Generate key pair
-      const key = await openpgp.generateKey({
-        type: 'rsa',           // RSA type
-        rsaBits: 2048,         // RSA key size
-        userIDs: [{ name: 'User', email: 'user@example.com' }], // user identity
-        passphrase: '',        // no passphrase to keep it simple
-      });
+      try {
+        const key = await openpgp.generateKey({
+          type: 'rsa',
+          rsaBits: 2048,
+          userIDs: [{ name: 'User', email: 'user@example.com' }],
+          passphrase: '',
+        });
 
-      // Export armored keys
-      const privateKeyArmored = key.privateKey; 
-      const publicKeyArmored = key.publicKey;
+        publicKeyArea.value = key.publicKey;
+        privateKeyArea.value = key.privateKey;
 
-      // Show keys in textareas
-      publicKeyArea.value = publicKeyArmored;
-      privateKeyArea.value = privateKeyArmored;
+      } catch (err) {
+        alert('Error generating keys: ' + err.message);
+      }
 
-    } catch (err) {
-      alert('Error generating keys: ' + err.message);
-    }
+      generateBtn.disabled = false;
+      generateBtn.textContent = 'Generate Key Pair';
+    });
 
-    generateBtn.disabled = false;
-    generateBtn.textContent = 'Generate Key Pair';
-  });
+    saveBtn.addEventListener('click', () => {
+      if (!publicKeyArea.value || !privateKeyArea.value) {
+        alert('Generate keys first!');
+        return;
+      }
+      const data = {
+        publicKey: publicKeyArea.value,
+        privateKey: privateKeyArea.value
+      };
 
-  saveBtn.addEventListener('click', () => {
-    if (!publicKeyArea.value || !privateKeyArea.value) {
-      alert('Generate keys first!');
-      return;
-    }
-    const data = {
-      publicKey: publicKeyArea.value,
-      privateKey: privateKeyArea.value
-    };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
 
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pgp_keys.json';
+      a.click();
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'pgp_keys.json';
-    a.click();
-
-    URL.revokeObjectURL(url);
-  });
+      URL.revokeObjectURL(url);
+    });
+  }
 </script>

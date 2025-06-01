@@ -2,90 +2,82 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PGP Main App</title>
+  <title>PGP Tool</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0; padding: 20px;
-      background: #f4f6f8;
-      color: #222;
+      margin: 20px;
     }
     nav {
       margin-bottom: 20px;
     }
     nav button {
       margin-right: 10px;
-      padding: 10px 16px;
-      font-weight: 600;
-      border: none;
-      border-radius: 6px;
-      background: #4F46E5;
-      color: white;
+      padding: 10px 15px;
+      font-size: 1em;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      background-color: #007BFF;
+      border: none;
+      color: white;
+      border-radius: 4px;
     }
     nav button:hover {
-      background: #4338ca;
-    }
-    nav button.active {
-      background: #3730a3;
+      background-color: #0056b3;
     }
     #page-content {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
+      border: 1px solid #ddd;
+      padding: 15px;
       min-height: 300px;
-      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      border-radius: 6px;
+      background-color: #fafafa;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
 </head>
 <body>
+  <h1>PGP Tool</h1>
+  <nav>
+    <button data-page="keygen.html">Key Generator</button>
+    <button data-page="sign.html">Sign Message</button>
+    <button data-page="verify.html">Verify Message</button>
+    <button data-page="friends.html">Friends</button>
+  </nav>
 
-<nav>
-  <button data-page="keygen.html" class="active">Generate Keys</button>
-  <button data-page="sign.html">Sign Message</button>
-  <button data-page="verify.html">Verify Message</button>
-  <button data-page="friends.html">Friends</button>
-  <button data-page="load.html">Load Keys & Friends</button>
-</nav>
+  <div id="page-content">
+    <p>Welcome! Use the buttons above to load a tool.</p>
+  </div>
 
-<div id="page-content">Loading...</div>
+  <script>
+    const pageContent = document.getElementById('page-content');
+    const buttons = document.querySelectorAll('nav button');
 
-<script>
-  const buttons = document.querySelectorAll('nav button');
-  const pageContent = document.getElementById('page-content');
-
-  async function loadPage(page) {
-    try {
-      const res = await fetch(page);
-      if (!res.ok) throw new Error('Failed to load ' + page);
-      const text = await res.text();
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, 'text/html');
-      pageContent.innerHTML = doc.body.innerHTML;
-
-    } catch (err) {
-      pageContent.innerHTML = `<p style="color: red;">Error loading page: ${err.message}</p>`;
-    }
-  }
-
-  function setActiveButton(clickedBtn) {
-    buttons.forEach(btn => btn.classList.remove('active'));
-    clickedBtn.classList.add('active');
-  }
-
-  buttons.forEach(button => {
-    button.addEventListener('click', () => {
-      setActiveButton(button);
-      loadPage(button.dataset.page);
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const page = btn.getAttribute('data-page');
+        loadPage(page);
+      });
     });
-  });
 
-  // Load default page on start
-  loadPage('keygen.html');
-</script>
+    async function loadPage(page) {
+      try {
+        const res = await fetch(page);
+        if (!res.ok) throw new Error(`Failed to load ${page}`);
+        const text = await res.text();
 
+        // Parse the HTML and inject body content only
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        pageContent.innerHTML = doc.body.innerHTML;
+
+        // Call init function if exists (for example: initKeygen for keygen.html)
+        const initFunctionName = 'init' + page.split('.')[0].charAt(0).toUpperCase() + page.split('.')[0].slice(1);
+        if (typeof window[initFunctionName] === 'function') {
+          window[initFunctionName]();
+        }
+      } catch (err) {
+        pageContent.innerHTML = `<p style="color: red;">Error loading page: ${err.message}</p>`;
+      }
+    }
+  </script>
 </body>
 </html>
