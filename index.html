@@ -2,80 +2,77 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>PGP Tool</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PGP Tools</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
+      background: #f9fafb;
+      padding: 2rem;
+      color: #111827;
     }
-    nav {
-      margin-bottom: 20px;
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
     }
-    nav button {
-      margin-right: 10px;
-      padding: 10px 15px;
-      font-size: 1em;
-      cursor: pointer;
-      background-color: #007BFF;
+
+    .nav {
+      margin-bottom: 2rem;
+    }
+
+    .nav button {
+      margin-right: 1rem;
+      padding: 10px 20px;
       border: none;
+      background: #4f46e5;
       color: white;
-      border-radius: 4px;
-    }
-    nav button:hover {
-      background-color: #0056b3;
-    }
-    #page-content {
-      border: 1px solid #ddd;
-      padding: 15px;
-      min-height: 300px;
       border-radius: 6px;
-      background-color: #fafafa;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .nav button:hover {
+      background: #4338ca;
+    }
+
+    #page-content {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 2rem;
+      background: white;
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/openpgp@5.5.0/dist/openpgp.min.js"></script>
 </head>
 <body>
-  <h1>PGP Tool</h1>
-  <nav>
-    <button data-page="keygen.html">Key Generator</button>
-    <button data-page="sign.html">Sign Message</button>
-    <button data-page="verify.html">Verify Message</button>
-    <button data-page="friends.html">Friends</button>
-  </nav>
+  <h1>Welcome to PGP Tools</h1>
+
+  <div class="nav">
+    <button onclick="loadPage('keygen.html', 'keygen.js')">Key Generator</button>
+    <button onclick="loadPage('decrypt.html', 'decrypt.js')">Decrypt</button>
+    <button onclick="loadPage('sign.html', 'sign.js')">Sign</button>
+    <button onclick="loadPage('verify.html', 'verify.js')">Verify</button>
+  </div>
 
   <div id="page-content">
-    <p>Welcome! Use the buttons above to load a tool.</p>
+    <p>Welcome! Press a button to load a tool.</p>
   </div>
 
   <script>
-    const pageContent = document.getElementById('page-content');
-    const buttons = document.querySelectorAll('nav button');
+    async function loadPage(page, script) {
+      const res = await fetch(page);
+      const html = await res.text();
+      document.getElementById('page-content').innerHTML = html;
 
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const page = btn.getAttribute('data-page');
-        loadPage(page);
-      });
-    });
+      // Dynamically load the script if provided
+      if (script) {
+        const existing = document.querySelector(`script[data-page="${script}"]`);
+        if (existing) existing.remove();
 
-    async function loadPage(page) {
-      try {
-        const res = await fetch(page);
-        if (!res.ok) throw new Error(`Failed to load ${page}`);
-        const text = await res.text();
-
-        // Parse the HTML and inject body content only
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(text, 'text/html');
-        pageContent.innerHTML = doc.body.innerHTML;
-
-        // Call init function if exists (for example: initKeygen for keygen.html)
-        const initFunctionName = 'init' + page.split('.')[0].charAt(0).toUpperCase() + page.split('.')[0].slice(1);
-        if (typeof window[initFunctionName] === 'function') {
-          window[initFunctionName]();
-        }
-      } catch (err) {
-        pageContent.innerHTML = `<p style="color: red;">Error loading page: ${err.message}</p>`;
+        const s = document.createElement('script');
+        s.src = script;
+        s.setAttribute('data-page', script);
+        document.body.appendChild(s);
       }
     }
   </script>

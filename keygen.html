@@ -1,83 +1,40 @@
-<!-- keygen.html -->
-<h1>PGP Key Generator</h1>
-
-<button id="generate-btn">Generate Key Pair</button>
-
-<section style="margin-top: 20px;">
-  <h3>Public Key</h3>
-  <textarea id="publicKey" readonly placeholder="Public key will appear here" style="width:100%; height:150px;"></textarea>
-</section>
-
-<section style="margin-top: 20px;">
-  <h3>
-    Private Key
-    <button id="toggle-private" style="margin-left: 10px; font-size: 0.9em; cursor: pointer;">Show</button>
-  </h3>
-  <textarea id="privateKey" readonly style="display:none; width:100%; height:150px;" placeholder="Private key will appear here"></textarea>
-</section>
-
-<button id="save-btn" style="margin-top: 20px;">Save Keys as JSON</button>
-
-<script>
-  function initKeygen() {
-    const generateBtn = document.getElementById('generate-btn');
-    const saveBtn = document.getElementById('save-btn');
-    const togglePrivateBtn = document.getElementById('toggle-private');
-    const publicKeyArea = document.getElementById('publicKey');
-    const privateKeyArea = document.getElementById('privateKey');
-
-    togglePrivateBtn.addEventListener('click', () => {
-      if (privateKeyArea.style.display === 'none') {
-        privateKeyArea.style.display = 'block';
-        togglePrivateBtn.textContent = 'Hide';
-      } else {
-        privateKeyArea.style.display = 'none';
-        togglePrivateBtn.textContent = 'Show';
-      }
+window.generateKeys = async function () {
+  try {
+    const { privateKey, publicKey } = await openpgp.generateKey({
+      type: 'rsa',
+      rsaBits: 2048,
+      format: 'armored',
+      userIDs: [{ name: 'User', email: 'user@example.com' }]
     });
 
-    generateBtn.addEventListener('click', async () => {
-      generateBtn.disabled = true;
-      generateBtn.textContent = 'Generating... (this may take a few seconds)';
-
-      try {
-        const key = await openpgp.generateKey({
-          type: 'rsa',
-          rsaBits: 2048,
-          userIDs: [{ name: 'User', email: 'user@example.com' }],
-          passphrase: '',
-        });
-
-        publicKeyArea.value = key.publicKey;
-        privateKeyArea.value = key.privateKey;
-
-      } catch (err) {
-        alert('Error generating keys: ' + err.message);
-      }
-
-      generateBtn.disabled = false;
-      generateBtn.textContent = 'Generate Key Pair';
-    });
-
-    saveBtn.addEventListener('click', () => {
-      if (!publicKeyArea.value || !privateKeyArea.value) {
-        alert('Generate keys first!');
-        return;
-      }
-      const data = {
-        publicKey: publicKeyArea.value,
-        privateKey: privateKeyArea.value
-      };
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'pgp_keys.json';
-      a.click();
-
-      URL.revokeObjectURL(url);
-    });
+    document.getElementById('publicKey').value = publicKey;
+    document.getElementById('privateKey').value = privateKey;
+  } catch (error) {
+    console.error('Key generation failed:', error);
+    alert('Failed to generate keys. See console for details.');
   }
-</script>
+};
+
+window.togglePrivateKey = function () {
+  const privateKeyArea = document.getElementById('privateKey');
+  privateKeyArea.classList.toggle('hidden');
+};
+
+window.saveAsJSON = function () {
+  const publicKey = document.getElementById('publicKey').value;
+  const privateKey = document.getElementById('privateKey').value;
+
+  if (!publicKey || !privateKey) {
+    alert('Please generate keys first.');
+    return;
+  }
+
+  const data = { publicKey, privateKey };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pgp_keys.json';
+  a.click();
+  URL.revokeObjectURL(url);
+};
